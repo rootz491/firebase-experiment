@@ -55,14 +55,14 @@ export const auth = async (req, res) => {
 			return res.status(400).json({ message: "Failed to create session" });
 		}
 
-		res.cookie("session", cookie, {
-			maxAge: 60 * 60 * 24 * 5 * 1000, // 5 days
+		// res.cookie("session", cookie, {
+		// 	maxAge: 60 * 60 * 24 * 5 * 1000, // 5 days
 			// httpOnly: true,
 			// secure: true,
 			// sameSite: "none",
-		});
+		// });
 
-		res.status(200).json({ message: "Success" });
+		res.status(200).json({ message: "Success", token: cookie });
 	} catch (error) {
 		console.log(error);
 		res.status(500).json({ message: "Internal server error" });

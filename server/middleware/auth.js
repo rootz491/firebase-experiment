@@ -5,11 +5,13 @@ export default async function isAuthenticated(req, res, next) {
 		// const sessionCookie = req.cookies.session || "";
 		const sessionCookie = req.headers.authorization.split(" ")[1] || "";
 
+		if (!sessionCookie) {
+			res.status(401).json({ message: "Unauthorized" });
+		}
+
 		const decodedClaims = await admin
 			.auth()
 			.verifySessionCookie(sessionCookie, true /** checkRevoked */);
-
-		console.log({ decodedClaims });
 
 		if (decodedClaims) {
 			if (decodedClaims?.type == null) {
@@ -17,7 +19,11 @@ export default async function isAuthenticated(req, res, next) {
 					.status(400)
 					.json({ message: "claims has no types, please contact admin" });
 			}
-			req.type = decodedClaims.type;
+			req.user = {
+				uid: decodedClaims.uid,
+				type: decodedClaims.type,
+				email: decodedClaims.email,
+			};
 			next();
 		} else {
 			res.status(401).json({ message: "Unauthorized" });

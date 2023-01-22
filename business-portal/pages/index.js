@@ -32,20 +32,40 @@ export default function Home() {
 	const loginWithServer = async (idToken) => {
 		try {
 			if (idToken == null) return;
-			axios.post("/api/auth/business", {
-				idToken: idToken,
-			})
+			axios
+				.post("/api/auth/business", {
+					idToken: idToken,
+				})
 				.then((response) => {
 					console.log(response.data);
 					const token = response.data.token;
 					if (token) {
 						localStorage.setItem("token", token);
 					}
-				})
+				});
 		} catch (error) {
 			console.log(error);
 		}
 	};
+
+	const fetchUserDetails = async () => {
+		try {
+			axios.get("/api/user").then((response) => {
+				console.log(response.data);
+			});
+		} catch (error) {
+			console.log(error);
+		}
+	};
+
+	const signout = async () => {
+		try {
+			await auth.signOut();
+			localStorage.removeItem("token");
+		} catch (error) {
+			console.log(error);
+		}
+	}
 
 	if (loading) return <div>Loading...</div>;
 
@@ -61,12 +81,15 @@ export default function Home() {
 			{user != null ? (
 				<div>
 					<p>You are logged in as {user.email}</p>
-					<button onClick={() => auth.signOut()}>Sign Out</button>
+					<button onClick={signout}>Sign Out</button>
 
 					<h2>Business Data</h2>
 					<p>Business ID: {user.uid}</p>
 					<p>Business Name: {user.displayName}</p>
 					<p>Business Email: {user.email}</p>
+
+					<h2>Fetch User Details from Server</h2>
+					<button onClick={() => fetchUserDetails()}>Fetch Data</button>
 				</div>
 			) : (
 				<div>
@@ -76,7 +99,7 @@ export default function Home() {
 							setLoading(true);
 							signInWithPopup(auth, provider).then((results) => {
 								setLoading(false);
-								const idToken = results._tokenResponse.idToken
+								const idToken = results._tokenResponse.idToken;
 								loginWithServer(idToken);
 							});
 						}}
