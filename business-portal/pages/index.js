@@ -37,11 +37,29 @@ export default function Home() {
 					idToken: idToken,
 				})
 				.then((response) => {
-					console.log(response.data);
+					const newUser = response.data.new;
+					if (newUser) {
+						auth.currentUser
+							.getIdToken(true)
+							.then((idToken) => {
+								loginWithServer(idToken);
+							})
+							.catch((error) => {
+								alert(
+									error?.response?.data?.message || error?.response || error
+								);
+								signout();
+							});
+						return;
+					}
 					const token = response.data.token;
 					if (token) {
 						localStorage.setItem("token", token);
 					}
+				})
+				.catch((error) => {
+					alert(error?.response?.data?.message || error?.response || error);
+					signout();
 				});
 		} catch (error) {
 			console.log(error);
@@ -50,9 +68,15 @@ export default function Home() {
 
 	const fetchUserDetails = async () => {
 		try {
-			axios.get("/api/user").then((response) => {
-				console.log(response.data);
-			});
+			axios
+				.get("/api/user")
+				.then((response) => {
+					console.log(response.data);
+				})
+				.catch((error) => {
+					alert(error?.response?.data?.message || error?.response || error);
+					signout();
+				});
 		} catch (error) {
 			console.log(error);
 		}
@@ -65,7 +89,7 @@ export default function Home() {
 		} catch (error) {
 			console.log(error);
 		}
-	}
+	};
 
 	if (loading) return <div>Loading...</div>;
 
