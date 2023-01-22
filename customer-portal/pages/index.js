@@ -1,11 +1,8 @@
-import {
-	GoogleAuthProvider,
-	signInWithPopup,
-	signInWithRedirect,
-} from "firebase/auth";
+import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import Head from "next/head";
 import { useEffect, useState } from "react";
 import { auth } from "../libs/firebase";
+import axios from "../libs/axios";
 
 const provider = new GoogleAuthProvider();
 provider.addScope("https://www.googleapis.com/auth/contacts.readonly");
@@ -31,6 +28,68 @@ export default function Home() {
 		}
 	}, []);
 
+	const loginWithServer = async (idToken) => {
+		try {
+			if (idToken == null) return;
+			axios
+				.post("/api/auth/customer", {
+					idToken: idToken,
+				})
+				.then((response) => {
+					const newUser = response.data.new;
+					if (newUser) {
+						auth.currentUser
+							.getIdToken(true)
+							.then((idToken) => {
+								loginWithServer(idToken);
+							})
+							.catch((error) => {
+								alert(
+									error?.response?.data?.message || error?.response || error
+								);
+								signout();
+							});
+						return;
+					}
+					const token = response.data.token;
+					if (token) {
+						localStorage.setItem("token", token);
+					}
+				})
+				.catch((error) => {
+					alert(error?.response?.data?.message || error?.response || error);
+					signout();
+				});
+		} catch (error) {
+			console.log("err", error);
+		}
+	};
+
+	const fetchUserDetails = async () => {
+		try {
+			axios
+				.get("/api/user")
+				.then((response) => {
+					console.log(response.data);
+				})
+				.catch((error) => {
+					alert(error?.response?.data?.message || error?.response || error);
+					// signout();
+				});
+		} catch (error) {
+			console.log(error);
+		}
+	};
+
+	const signout = async () => {
+		try {
+			await auth.signOut();
+			localStorage.removeItem("token");
+		} catch (error) {
+			console.log(error);
+		}
+	};
+
 	if (loading) {
 		return <div>Loading...</div>;
 	}
@@ -47,12 +106,15 @@ export default function Home() {
 			{user != null ? (
 				<div>
 					<p>You are logged in as {user.email}</p>
-					<button onClick={() => auth.signOut()}>Sign Out</button>
+					<button onClick={signout}>Sign Out</button>
 
 					<h2>Customer Data</h2>
 					<p>Customer ID: {user.uid}</p>
 					<p>Customer Name: {user.displayName}</p>
 					<p>Customer Email: {user.email}</p>
+
+					<h2>Fetch User Details from Server</h2>
+					<button onClick={() => fetchUserDetails()}>Fetch Data</button>
 				</div>
 			) : (
 				<div>
@@ -60,10 +122,17 @@ export default function Home() {
 					<button
 						onClick={() => {
 							setLoading(true);
-							signInWithPopup(auth, provider).then((results) => {
-								setLoading(false);
-								console.log(results._tokenResponse.idToken);
-							});
+							signInWithPopup(auth, provider)
+								.then(async (results) => {
+									const idToken = results._tokenResponse.idToken;
+									loginWithServer(idToken);
+									setLoading(false);
+								})
+								.catch((error) => {
+									console.log(error);
+									setLoading(false);
+									signout();
+								});
 						}}
 					>
 						Sign In

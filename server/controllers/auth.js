@@ -35,13 +35,17 @@ export const auth = async (req, res) => {
 		}
 
 		if (type === "customer") {
-			admin.auth().setCustomUserClaims(decoded.uid, { type: "customer" });
+			await admin.auth().setCustomUserClaims(decoded.uid, { type: "customer" });
 		} else if (type === "business") {
-			admin.auth().setCustomUserClaims(decoded.uid, { type: "business" });
+			await admin.auth().setCustomUserClaims(decoded.uid, { type: "business" });
 		} else {
 			return res
 				.status(400)
 				.json({ message: "Invalid type, please contact admin" });
+		}
+
+		if (customClaims == null) {
+			return res.status(200).json({ message: "Success", new: true });
 		}
 
 		if (new Date().getTime() / 1000 - auth_time > 5 * 60) {
@@ -57,9 +61,9 @@ export const auth = async (req, res) => {
 
 		// res.cookie("session", cookie, {
 		// 	maxAge: 60 * 60 * 24 * 5 * 1000, // 5 days
-			// httpOnly: true,
-			// secure: true,
-			// sameSite: "none",
+		// httpOnly: true,
+		// secure: true,
+		// sameSite: "none",
 		// });
 
 		res.status(200).json({ message: "Success", token: cookie });
