@@ -1,7 +1,8 @@
 import Head from "next/head";
 import { useEffect, useState } from "react";
-import { auth } from "../libs/firebase";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { auth } from "../libs/firebase";
+import axios from "../libs/axios";
 
 const provider = new GoogleAuthProvider();
 provider.addScope("https://www.googleapis.com/auth/contacts.readonly");
@@ -27,6 +28,24 @@ export default function Home() {
 			});
 		}
 	}, []);
+
+	const loginWithServer = async (idToken) => {
+		try {
+			if (idToken == null) return;
+			axios.post("/api/auth/business", {
+				idToken: idToken,
+			})
+				.then((response) => {
+					console.log(response.data);
+					const token = response.data.token;
+					if (token) {
+						localStorage.setItem("token", token);
+					}
+				})
+		} catch (error) {
+			console.log(error);
+		}
+	};
 
 	if (loading) return <div>Loading...</div>;
 
@@ -57,7 +76,8 @@ export default function Home() {
 							setLoading(true);
 							signInWithPopup(auth, provider).then((results) => {
 								setLoading(false);
-								console.log(results._tokenResponse.idToken);
+								const idToken = results._tokenResponse.idToken
+								loginWithServer(idToken);
 							});
 						}}
 					>

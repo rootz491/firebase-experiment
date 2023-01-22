@@ -44,9 +44,8 @@ export const auth = async (req, res) => {
 				.json({ message: "Invalid type, please contact admin" });
 		}
 
-		//  If the user has logged in within the last 5 minutes, do not create a new session
-		if (new Date().getTime() / 1000 - auth_time < 5 * 60) {
-			return res.status(400).json({ message: "Recent login" });
+		if (new Date().getTime() / 1000 - auth_time > 5 * 60) {
+			return res.status(400).json({ message: "Provided old token" });
 		}
 
 		const cookie = await admin.auth().createSessionCookie(idToken, {
