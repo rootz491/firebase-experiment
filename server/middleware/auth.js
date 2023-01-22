@@ -1,4 +1,4 @@
-import admin from "../libs/firebase";
+import admin from "../libs/firebase.js";
 
 export default async function isAuthenticated(req, res, next) {
 	try {
